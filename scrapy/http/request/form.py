@@ -127,24 +127,33 @@ def _get_inputs(form, formdata, dont_click, clickdata, response):
                         '  not(re:test(., "^(?:checkbox|radio)$", "i")))]]',
                         namespaces={
                             "re": "http://exslt.org/regular-expressions"})
-    values = [(k, u'' if v is None else v)
-              for k, v in (_value(e) for e in inputs)
-              if k and k not in formdata_keys]
 
+    values = filter_values(inputs, formdata_keys)
     if not dont_click:
         append_clickable_elements(values, clickdata, form, formdata)
 
     if isinstance(formdata, dict):
         formdata = formdata.items()
 
-    formdata = list(filter(lambda k, v: v is not None))
-    values.extend(formdata)
+    values.extend((k, v) for k, v in formdata if v is not None)
+    return values
+
+
+def filter_values(inputs, formdata_keys):
+    values = []
+    input_values = (_value(e) for e in inputs)
+    for k, v in input_values:
+        if k and k not in formdata_keys:
+            if v is None:
+                values += [(k, u'')]
+            else:
+                values += [(k, v)]
     return values
 
 
 def append_clickable_elements(values, clickdata, form, formdata):
     clickable = _get_clickable(clickdata, form)
-    valid_data = clickable and clickable[0] in formdata
+    valid_data = clickable and clickable[0] not in formdata
     valid_data = valid_data and not clickable[0] is None
     if valid_data:
         values.append(clickable)
