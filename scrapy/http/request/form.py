@@ -74,14 +74,14 @@ def _urlencode(seq, enc):
 def _get_form(response, formname, formid, formnumber, formxpath):
     """Find the form element """
 
-    @dataclass
     class FormChecker:
-        root: lxml.etree = None
-        form_node: lxml.etree = None
+        root = None
+        form_node = None
 
     root = create_root_node(response.text, lxml.html.HTMLParser,
                             base_url=get_base_url(response))
-    form_checker = FormChecker(root=root)
+    form_checker = FormChecker()
+    form_checker.root = root
 
     # functools.partial returns a callable wrapping a function with all of the arguments frozen.
     checks = [
