@@ -113,13 +113,12 @@ def _get_form(response, formname, formid, formnumber, formxpath):
 
 
 def _get_inputs(form, formdata, dont_click, clickdata, response):
+    formdata = formdata or ()
     try:
-        formdata_keys = dict(formdata or ()).keys()
+        formdata_keys = dict(formdata).keys()
     except (ValueError, TypeError):
         raise ValueError('formdata should be a dict or iterable of tuples')
 
-    if not formdata:
-        formdata = ()
     inputs = form.xpath('descendant::textarea'
                         '|descendant::select'
                         '|descendant::input[not(@type) or @type['
@@ -133,15 +132,22 @@ def _get_inputs(form, formdata, dont_click, clickdata, response):
               if k and k not in formdata_keys]
 
     if not dont_click:
-        clickable = _get_clickable(clickdata, form)
-        if clickable and clickable[0] not in formdata and not clickable[0] is None:
-            values.append(clickable)
+        append_clickable_elements(values, clickdata, form, formdata)
 
     if isinstance(formdata, dict):
         formdata = formdata.items()
 
-    values.extend((k, v) for k, v in formdata if v is not None)
+    formdata = list(filter(lambda k, v: v is not None))
+    values.extend(formdata)
     return values
+
+
+def append_clickable_elements(values, clickdata, form, formdata):
+    clickable = _get_clickable(clickdata, form)
+    valid_data = clickable and clickable[0] in formdata
+    valid_data = valid_data and not clickable[0] is None
+    if valid_data:
+        values.append(clickable)
 
 
 def _value(ele):
@@ -178,7 +184,7 @@ def _get_clickable(clickdata, form):
             'descendant::input[re:test(@type, "^(submit|image)$", "i")]'
             '|descendant::button[not(@type) or re:test(@type, "^submit$", "i")]',
             namespaces={"re": "http://exslt.org/regular-expressions"})
-        ]
+    ]
     if not clickables:
         return
 
@@ -202,7 +208,7 @@ def _get_clickable(clickdata, form):
     # We didn't find it, so now we build an XPath expression out of the other
     # arguments, because they can be used as such
     xpath = u'.//*' + \
-            u''.join(u'[@%s="%s"]' % c for c in six.iteritems(clickdata))
+        u''.join(u'[@%s="%s"]' % c for c in six.iteritems(clickdata))
     el = form.xpath(xpath)
     if len(el) == 1:
         return (el[0].get('name'), el[0].get('value') or '')
