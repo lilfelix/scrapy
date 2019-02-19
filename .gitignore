@@ -19,3 +19,6 @@ htmlcov/
 
 # Windows
 Thumbs.db
+
+.vscode/
+env/
