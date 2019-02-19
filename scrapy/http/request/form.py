@@ -16,7 +16,6 @@ from w3lib.html import strip_html5_whitespace
 from scrapy.http.request import Request
 from scrapy.utils.python import to_bytes, is_listlike
 from scrapy.utils.response import get_base_url
-from dataclasses import dataclass
 import functools
 
 
